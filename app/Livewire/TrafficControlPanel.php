@@ -20,6 +20,13 @@ class TrafficControlPanel extends Component
     public $client_search = '';
     public $selected_client_id = null;
 
+    public function mount()
+    {
+        if (Auth::user()->role === 'operator') {
+            return redirect()->route('operator');
+        }
+    }
+
     public function selectClient($clientId)
     {
         $client = Client::find($clientId);
@@ -99,17 +106,17 @@ class TrafficControlPanel extends Component
                 ->get();
         }
 
-        $pendingOrders = Order::with(['client', 'operator'])
-            ->whereIn('status', ['pending', 'assigned', 'picked_up'])
-            ->latest()
-            ->get();
-            
-        $operators = User::where('role', 'operator')->get();
-
         return view('livewire.traffic-control-panel', [
             'suggestedClients' => $clients,
-            'pendingOrders' => $pendingOrders,
-            'operators' => $operators,
+            'pendingOrders' => Order::with(['client', 'operator'])
+                                    ->whereIn('status', ['pending', 'assigned', 'picked_up'])
+                                    ->orderBy('created_at', 'desc')
+                                    ->get(),
+            'historyOrders' => Order::with(['client', 'operator'])
+                                    ->where('status', 'delivered')
+                                    ->orderBy('updated_at', 'desc')
+                                    ->get(),
+            'operators' => User::where('role', 'operator')->get()
         ]);
     }
 }

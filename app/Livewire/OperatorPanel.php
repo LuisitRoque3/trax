@@ -13,6 +13,9 @@ class OperatorPanel extends Component
 
     public function mount()
     {
+        if (Auth::user()->role === 'traffic_control') {
+            return redirect()->route('dashboard');
+        }
         $this->loadActiveOrder();
     }
 
