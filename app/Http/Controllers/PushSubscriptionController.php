@@ -15,15 +15,15 @@ class PushSubscriptionController extends Controller
      */
     public function subscribe(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'endpoint'    => 'required|url',
             'keys.auth'   => 'required|string',
             'keys.p256dh' => 'required|string'
         ]);
 
-        $endpoint = $request->endpoint;
-        $token = $request->keys['auth'];
-        $key = $request->keys['p256dh'];
+        $endpoint = $request->input('endpoint');
+        $token = $request->input('keys.auth');
+        $key = $request->input('keys.p256dh');
         $user = Auth::user();
 
         $user->updatePushSubscription($endpoint, $key, $token);
