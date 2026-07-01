@@ -85,6 +85,11 @@ class TrafficControlPanel extends Component
                 'operator_id' => $operatorId,
                 'status' => 'assigned'
             ]);
+
+            $operator = User::find($operatorId);
+            if ($operator) {
+                $operator->notify(new \App\Notifications\OrderAssignedNotification($order));
+            }
         }
     }
 

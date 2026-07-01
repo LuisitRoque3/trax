@@ -51,7 +51,13 @@ class OperatorPanel extends Component
     {
         if ($this->activeOrder) {
             $this->activeOrder->update(['status' => $newStatus]);
-            if ($newStatus === 'delivered') {
+            
+            $tcUsers = \App\Models\User::where('role', 'traffic_control')->get();
+
+            if ($newStatus === 'picked_up') {
+                \Illuminate\Support\Facades\Notification::send($tcUsers, new \App\Notifications\OrderPickedUpNotification($this->activeOrder));
+            } elseif ($newStatus === 'delivered') {
+                \Illuminate\Support\Facades\Notification::send($tcUsers, new \App\Notifications\OrderDeliveredNotification($this->activeOrder));
                 $this->activeOrder = null;
                 $this->checklist = [];
             }

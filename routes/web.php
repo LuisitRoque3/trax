@@ -12,4 +12,8 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
+Route::post('/push-subscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'subscribe'])
+    ->middleware(['auth'])
+    ->name('push.subscribe');
+
 require __DIR__.'/auth.php';
