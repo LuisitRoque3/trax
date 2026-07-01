@@ -47,32 +47,60 @@
             }
 
             function subscribeUser() {
-                if ('serviceWorker' in navigator && 'PushManager' in window) {
-                    navigator.serviceWorker.ready.then(function(registration) {
-                        const applicationServerKey = urlB64ToUint8Array(vapidPublicKey);
-                        registration.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: applicationServerKey
-                        })
-                        .then(function(subscription) {
-                            console.log('User is subscribed.');
-                            // Hide the prompt
-                            document.getElementById('push-notification-prompt').style.display = 'none';
+                console.log("Botón Activar presionado. Llave VAPID:", vapidPublicKey);
+                if (!vapidPublicKey || vapidPublicKey.trim() === '') {
+                    alert("Error: La llave VAPID no está configurada en el servidor.");
+                    return;
+                }
 
-                            // Send subscription to backend
-                            fetch('/push-subscribe', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                body: JSON.stringify(subscription)
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    console.log("Esperando a que el ServiceWorker esté listo...");
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        console.log("ServiceWorker listo. Intentando suscribir...");
+                        try {
+                            const applicationServerKey = urlB64ToUint8Array(vapidPublicKey);
+                            registration.pushManager.subscribe({
+                                userVisibleOnly: true,
+                                applicationServerKey: applicationServerKey
+                            })
+                            .then(function(subscription) {
+                                console.log('Usuario suscrito en el navegador:', subscription);
+                                document.getElementById('push-notification-prompt').style.display = 'none';
+
+                                // Send subscription to backend
+                                fetch('/push-subscribe', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    },
+                                    body: JSON.stringify(subscription)
+                                })
+                                .then(response => {
+                                    if (response.ok) {
+                                        alert("¡Suscripción guardada exitosamente!");
+                                        console.log("Suscripción guardada en el servidor.");
+                                    } else {
+                                        alert("Error del servidor (Código: " + response.status + "). Revisa la consola.");
+                                        console.error("El servidor devolvió un error:", response);
+                                    }
+                                })
+                                .catch(err => {
+                                    alert("Error de red al intentar guardar en el servidor.");
+                                    console.error('Fetch error:', err);
+                                });
+                            })
+                            .catch(function(err) {
+                                console.error('Falló la suscripción en el navegador: ', err);
+                                alert("Error del navegador: " + err.message);
                             });
-                        })
-                        .catch(function(err) {
-                            console.log('Failed to subscribe the user: ', err);
-                        });
+                        } catch (e) {
+                            console.error('Error procesando la llave VAPID:', e);
+                            alert("Error al procesar llave VAPID. Revisa consola.");
+                        }
                     });
+                } else {
+                    alert("Tu navegador no soporta notificaciones Push.");
                 }
             }
 
